@@ -8,7 +8,7 @@ import formatType from "../helpers/formatType";
 type Params = { id: string };
 
 const PokemonsDetail: FunctionComponent = () => {
-  const { id } = useParams(); //<-- je ne sais pas typer id, je découvre ts
+  const { id } = useParams<Params>();
   const [pokemon, setPokemon] = useState<Pokemon | null>(null);
 
   useEffect(() => {
@@ -32,6 +32,12 @@ const PokemonsDetail: FunctionComponent = () => {
                   alt={pokemon.name}
                   style={{ width: "250px", margin: "0 auto" }}
                 />
+                <Link
+                  to={`/pokemons/edit/${pokemon.id}`}
+                  className="btn btn-floating halfway-fab waves-effect"
+                >
+                  <i className="material-icons">edit</i>
+                </Link>
               </div>
               <div className="card-stacked">
                 <div className="card-content">
