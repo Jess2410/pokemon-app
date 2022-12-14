@@ -1,5 +1,6 @@
 import React, { FunctionComponent, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import Loader from "../components/loader";
 import PokemonForm from "../components/pokemonForm";
 import Pokemon from "../models/pokemon";
 import PokemonService from "../services/pokemon-service";
@@ -29,7 +30,9 @@ const PokemonEdit: FunctionComponent = () => {
           <PokemonForm pokemon={pokemon} isEditForm={true}></PokemonForm>
         </div>
       ) : (
-        <h4 className="center">Aucun pokémon à afficher !</h4>
+        <h4 className="center">
+          <Loader />
+        </h4>
       )}
     </div>
   );
