@@ -2,7 +2,7 @@ import React, { FunctionComponent, useState } from "react";
 import Pokemon from "../models/pokemon";
 import formatType from "../helpers/formatType";
 import { useNavigate } from "react-router-dom";
-
+import PokemonService from "../services/pokemon-service";
 type Props = {
   pokemon: Pokemon;
   isEditForm: boolean;
@@ -22,7 +22,9 @@ type Form = {
   types: Field;
 };
 
-const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
+const PokemonForm: FunctionComponent<Props> = ({ pokemon, isEditForm }) => {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState<Form>({
     picture: { value: pokemon.picture },
     name: { value: pokemon.name, isValid: true },
@@ -30,8 +32,6 @@ const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
     cp: { value: pokemon.cp, isValid: true },
     types: { value: pokemon.types, isValid: true },
   });
-
-  const navigate = useNavigate();
 
   const types: string[] = [
     "Plante",
@@ -47,16 +47,8 @@ const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
     "Psy",
   ];
 
-  const hasType = (type: string) => {
+  const hasType = (type: string): boolean => {
     return form.types.value.includes(type);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fieldName: string = e.target.name;
-    const fieldValue: string = e.target.value;
-    const newField: Field = { [fieldName]: { value: fieldValue } };
-
-    setForm({ ...form, ...newField });
   };
 
   const selectType = (
@@ -67,7 +59,7 @@ const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
     let newField: Field;
 
     if (checked) {
-      // Si l'utilisateur coche un type, on l'ajoute à la liste des types du pokémon.
+      // Si l'utilisateur coche un type, à l'ajoute à la liste des types du pokémon.
       const newTypes: string[] = form.types.value.concat([type]);
       newField = { value: newTypes };
     } else {
@@ -81,34 +73,43 @@ const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
     setForm({ ...form, ...{ types: newField } });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const fieldName: string = e.target.name;
+    const fieldValue: string = e.target.value;
+    const newField: Field = { [fieldName]: { value: fieldValue } };
 
-    const isFormValid = validateForm();
-
-    if (isFormValid) {
-      navigate(`/pokemons/${pokemon.id}`);
-    }
+    setForm({ ...form, ...newField });
   };
 
   const validateForm = () => {
     let newForm: Form = form;
 
     // Validator url
-    // if(isAddForm()) {
+    if (isAddForm()) {
+      const start =
+        "https://assets.pokemon.com/assets/cms2/img/pokedex/detail/";
+      const end = ".png";
 
-    //   const start = "https://assets.pokemon.com/assets/cms2/img/pokedex/detail/";
-    //   const end = ".png";
-
-    //   if(!form.picture.value.startsWith(start) || !form.picture.value.endsWith(end)) {
-    //     const errorMsg: string = 'L\'url n\'est pas valide.';
-    //     const newField: Field = { value: form.picture.value, error: errorMsg, isValid: false };
-    //     newForm = { ...newForm, ...{ picture: newField } };
-    //   } else {
-    //     const newField: Field = { value: form.picture.value, error: '', isValid: true };
-    //     newForm = { ...newForm, ...{ picture: newField } };
-    //   }
-    // }
+      if (
+        !form.picture.value.startsWith(start) ||
+        !form.picture.value.endsWith(end)
+      ) {
+        const errorMsg: string = "L'url n'est pas valide.";
+        const newField: Field = {
+          value: form.picture.value,
+          error: errorMsg,
+          isValid: false,
+        };
+        newForm = { ...newForm, ...{ picture: newField } };
+      } else {
+        const newField: Field = {
+          value: form.picture.value,
+          error: "",
+          isValid: true,
+        };
+        newForm = { ...newForm, ...{ picture: newField } };
+      }
+    }
 
     // Validator name
     if (!/^[a-zA-Zàéè ]{3,25}$/.test(form.name.value)) {
@@ -188,27 +189,85 @@ const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
     return true;
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const isFormValid = validateForm();
+    if (isFormValid) {
+      pokemon.picture = form.picture.value;
+      pokemon.name = form.name.value;
+      pokemon.hp = form.hp.value;
+      pokemon.cp = form.cp.value;
+      pokemon.types = form.types.value;
+      isEditForm ? updatePokemon() : addPokemon();
+    }
+  };
+
+  const deletePokemon = () => {
+    PokemonService.deletePokemon(pokemon).then(() => navigate(`/pokemons`));
+  };
+
+  const isAddForm = (): boolean => {
+    return !isEditForm;
+  };
+
+  const addPokemon = () => {
+    PokemonService.addPokemon(pokemon).then(() => navigate(`/pokemons`));
+  };
+
+  const updatePokemon = () => {
+    PokemonService.updatePokemon(pokemon).then(() =>
+      navigate(`/pokemons/${pokemon.id}`)
+    );
+  };
+
   return (
     <form onSubmit={(e) => handleSubmit(e)}>
       <div className="row">
         <div className="col s12 m8 offset-m2">
           <div className="card hoverable">
-            <div className="card-image">
-              <img
-                src={pokemon.picture}
-                alt={pokemon.name}
-                style={{ width: "250px", margin: "0 auto" }}
-              />
-            </div>
+            {isEditForm && (
+              <div className="card-image">
+                <img
+                  src={pokemon.picture}
+                  alt={pokemon.name}
+                  style={{ width: "250px", margin: "0 auto" }}
+                />
+                <span className="btn-floating halfway-fab waves-effect waves-light">
+                  <i onClick={deletePokemon} className="material-icons">
+                    delete
+                  </i>
+                </span>
+              </div>
+            )}
             <div className="card-stacked">
               <div className="card-content">
+                {/* Pokemon picture */}
+                {isAddForm() && (
+                  <div className="form-group">
+                    <label htmlFor="picture">Image</label>
+                    <input
+                      id="picture"
+                      type="text"
+                      name="picture"
+                      className="form-control"
+                      value={form.picture.value}
+                      onChange={(e) => handleInputChange(e)}
+                    ></input>
+                    {/* error */}
+                    {form.picture.error && (
+                      <div className="card-panel red accent-1">
+                        {form.picture.error}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {/* Pokemon name */}
                 <div className="form-group">
                   <label htmlFor="name">Nom</label>
                   <input
                     id="name"
-                    name="name"
                     type="text"
+                    name="name"
                     className="form-control"
                     value={form.name.value}
                     onChange={(e) => handleInputChange(e)}
@@ -225,8 +284,8 @@ const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
                   <label htmlFor="hp">Point de vie</label>
                   <input
                     id="hp"
-                    name="hp"
                     type="number"
+                    name="hp"
                     className="form-control"
                     value={form.hp.value}
                     onChange={(e) => handleInputChange(e)}
@@ -243,8 +302,8 @@ const PokemonForm: FunctionComponent<Props> = ({ pokemon }) => {
                   <label htmlFor="cp">Dégâts</label>
                   <input
                     id="cp"
-                    name="cp"
                     type="number"
+                    name="cp"
                     className="form-control"
                     value={form.cp.value}
                     onChange={(e) => handleInputChange(e)}

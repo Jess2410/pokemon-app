@@ -1,9 +1,9 @@
 import React, { FunctionComponent, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Pokemon from "../models/pokemon";
-import POKEMONS from "../models/data-pokemons";
 import formatDate from "../helpers/formatDate";
 import formatType from "../helpers/formatType";
+import PokemonService from "../services/pokemon-service";
 
 type Params = { id: string };
 
@@ -12,11 +12,14 @@ const PokemonsDetail: FunctionComponent = () => {
   const [pokemon, setPokemon] = useState<Pokemon | null>(null);
 
   useEffect(() => {
-    POKEMONS.forEach((pokemon) => {
-      if (id === pokemon.id.toString()) {
-        setPokemon(pokemon);
-      }
-    });
+    PokemonService.getPokemon(Number(id)).then((pokemon) =>
+      setPokemon(pokemon)
+    );
+    // fetch(`http://localhost:3002/pokemons/${id}`)
+    //   .then((response) => response.json())
+    //   .then((pokemon) => {
+    //     if (pokemon.id) setPokemon(pokemon);
+    //   });
   }, [id]);
 
   return (
@@ -73,7 +76,12 @@ const PokemonsDetail: FunctionComponent = () => {
                       </tr>
                       <tr>
                         <td>Date de création</td>
-                        <td>{formatDate(pokemon.created)}</td>
+
+                        {pokemon.created ? (
+                          <td>{formatDate(new Date(pokemon.created))}</td>
+                        ) : (
+                          "-"
+                        )}
                       </tr>
                     </tbody>
                   </table>
