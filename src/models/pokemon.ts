@@ -6,7 +6,7 @@ export default class Pokemon {
     name: string;
     picture: string;
     types: Array<string>;
-    created: string | undefined;
+    created: string ;
      
     // 2. Définition des valeurs par défaut des propriétés d'un pokémon.
     constructor(
